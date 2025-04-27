@@ -41,14 +41,9 @@ class GameFragment : Fragment(R.layout.fragment_game) {
 
         preferenceManager?.apply {
 
-            /*
             val playMusic = getBoolean("playMusic", false)
             if (playMusic) {
-                mediaPlayer = MediaPlayer.create(mActivity, R.raw.music)
-                playBackground(mediaPlayer!!)
             }
-
-             */
 
             chessView.setSoundEffectEnabled(getBoolean("clickSound", true))
 
@@ -141,18 +136,4 @@ class GameFragment : Fragment(R.layout.fragment_game) {
         })
 
     }
-
-    /*
-    private fun playBackground(mediaPlayer: MediaPlayer) {
-        mediaPlayer.setOnCompletionListener {
-            mediaPlayer.seekTo(mediaPlayer.duration / 2)
-            mediaPlayer.start()
-        }
-
-        mediaPlayer.start()
-    }
-
-     */
-
-
 }
