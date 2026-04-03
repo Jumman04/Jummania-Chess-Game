@@ -353,21 +353,8 @@ internal class ChessController(
         if (attackingPosition != -1) {
             val s = findAttacker(attackingPosition, !opsiteTurn)
 
-            val piece = chessBoard[s]
-            if (piece?.isKing() == true) {
-                val atterkerPiece = get(attackingPosition)
-                movePiece(s, attackingPosition, piece)
-                val ss = findAttacker(attackingPosition, opsiteTurn)
-                reverseMove(s, attackingPosition, piece, atterkerPiece)
-                Log.d("Jjj", "$ss")
-
-                if (ss != -1) {
-                    showEndDialogue("Check Mate!")
-                }
-            }
-
-            Log.d("Jjj", "attackingPosition: $attackingPosition, s = $s")
             if (s == -1) {
+                showEndDialogue()/*
                 val movePosition = intArrayOf(
                     kingPosition - 9,
                     kingPosition - 8,
@@ -380,12 +367,31 @@ internal class ChessController(
                 var kingCanMoove = false
                 for (i in movePosition) {
                     kingCanMoove = isKingMoveAllowed(kingPosition, i, 2, opsiteTurn)
-                    if (kingCanMoove) break
+                    if (kingCanMoove) {
+                        Log.d("Jjj", "kingCanMoove: $i")
+                        break
+                    }
                 }
 
-                if (!kingCanMoove) showEndDialogue()
+                if (!kingCanMoove)
+                 showEndDialogue()
+                 */
+            } else {
+                val piece = get(s)
+                if (piece?.isKing() == true) {
+                    val atterkerPiece = get(attackingPosition)
+                    movePiece(s, attackingPosition, piece)
+                    val ss = findAttacker(attackingPosition, opsiteTurn)
+                    reverseMove(s, attackingPosition, piece, atterkerPiece)
+                    Log.d("Jjj", "$ss")
 
+                    if (ss != -1) {
+                        showEndDialogue("Check Mate!")
+                    }
+                }
             }
+
+            Log.d("Jjj", "attackingPosition: $attackingPosition, s = $s")
         }
 
         // Special handling for Rook and King castling moves
