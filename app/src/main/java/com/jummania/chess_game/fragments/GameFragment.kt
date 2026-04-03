@@ -79,10 +79,7 @@ class GameFragment : Fragment(R.layout.fragment_game) {
                         "You are a chess AI playing as White. The board is indexed from 0 (top-left, A8) to 63 (bottom-right, H1).\n\nYour pieces:\n$friends\n\nOpponent's pieces:\n$enemies\n\nFollow these movement rules:\n- Pawn: +8 (move), +7/+9 (capture)\n- Knight: ±6, ±10, ±15, ±17 (L-shape)\n- Bishop: ±7, ±9 (diagonals)\n- Rook: ±1 (row), ±8 (column)\n- Queen: bishop + rook moves\n- King: ±1, ±7, ±8, ±9 (1 square any direction)\n\nIt's your turn. Respond with one legal move only in this format:\nfromPosition, toPosition\nExample: 52, 36"
 
                     submit(prompt) { from, to ->
-                        mActivity.runOnUiThread {
-                            chessView.swapTo(from, to, true)
-                        }
-
+                        chessView.swapTo(from, to, true)
                     }
                 }
             }.setNegativeButton("No", null).show()
@@ -118,7 +115,7 @@ class GameFragment : Fragment(R.layout.fragment_game) {
 
             override fun onResponse(call: Call, response: Response) {
                 response.use {
-                    it.body?.use { body ->
+                    it.body.use { body ->
 
                         val jsonObject = JSONObject(body.string())
                         val string = jsonObject.getJSONObject("LMNx9").getString("Response")
