@@ -2,6 +2,7 @@ package com.jummania
 
 import android.app.Activity
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.jummania.ChessView.Companion.isWhiteTurn
@@ -127,14 +128,7 @@ internal class ChessController(
      * @return The piece at the specified position, or null if the position is invalid or empty.
      */
     fun get(position: Int): Piece? {
-        // Check if the position is within the valid indices of the chessboard
-        if (position in indices) {
-            // Return the piece at the specified position
-            return chessBoard[position]
-        }
-
-        // Return null if the position is out of bounds or invalid
-        return null
+        return if (position in indices) chessBoard.get(position) else null
     }
 
 
@@ -230,6 +224,45 @@ internal class ChessController(
         // Check if the destination square contains a piece of the same color
         if (isFriend(toPiece, isWhiteTurn)) return false  // Can't land on your own piece
 
+
+        var kingPosition = chessBoard.indexOfFirst {
+            it != null && it.isKing() && it.color == if (isWhiteTurn) pieceLightColor else pieceDarkColor
+        }
+
+        /*
+        val attackingPosition = findAttacker(kingPosition, isWhiteTurn)
+        if (attackingPosition != -1) {
+            if (findAttacker(attackingPosition, !isWhiteTurn) == -1) {
+
+
+            }
+        }
+
+         */
+
+        val movePosition = intArrayOf(
+            kingPosition - 9,
+            kingPosition - 8,
+            kingPosition - 7,
+            kingPosition + 7,
+            kingPosition + 8,
+            kingPosition + 9
+        )
+
+        var kingCanMoove = true
+        for (i in movePosition) {
+            if (i !in indices) continue
+            //   Log.d("Jjj", "swapTo: $i")
+            if (isFriend(chessBoard[i], isWhiteTurn)) {
+                continue
+            }
+            kingCanMoove = isKingMoveAllowed(kingPosition, i, 2, isWhiteTurn)
+            if (kingCanMoove) break
+        }
+
+        if (!kingCanMoove) showEndDialogue()
+
+
         // Initialize flags for Rook and King checks (for castling and rook-specific movement)
         val isRook = fromPiece.isRook()
         val isKing = fromPiece.isKing()
@@ -299,12 +332,60 @@ internal class ChessController(
         movePiece(fromIndex, toIndex, fromPiece)
 
         // Check if the move puts the current player's king in check
-        if (isCheck(isWhiteTurn)) {
+
+        if (isCheck(isWhiteTurn) != -1) {
             // Reverse the move if it results in the king being in check
             reverseMove(fromIndex, toIndex, fromPiece, toPiece)
             if (isOnline) return false
             message("Illegal move: You must get out of check and can't put your King in danger.")  // Inform the player of illegal move
             return true
+        }
+
+
+        val opsiteTurn = !isWhiteTurn
+
+        kingPosition = chessBoard.indexOfFirst {
+            it != null && it.isKing() && it.color == if (opsiteTurn) pieceLightColor else pieceDarkColor
+        }
+
+
+        val attackingPosition = findAttacker(kingPosition, opsiteTurn)
+        if (attackingPosition != -1) {
+            val s = findAttacker(attackingPosition, !opsiteTurn)
+
+            val piece = chessBoard[s]
+            if (piece?.isKing() == true) {
+                val atterkerPiece = get(attackingPosition)
+                movePiece(s, attackingPosition, piece)
+                val ss = findAttacker(attackingPosition, opsiteTurn)
+                reverseMove(s, attackingPosition, piece, atterkerPiece)
+                Log.d("Jjj", "$ss")
+
+                if (ss != -1) {
+                    showEndDialogue("Check Mate!")
+                }
+            }
+
+            Log.d("Jjj", "attackingPosition: $attackingPosition, s = $s")
+            if (s == -1) {
+                val movePosition = intArrayOf(
+                    kingPosition - 9,
+                    kingPosition - 8,
+                    kingPosition - 7,
+                    kingPosition + 7,
+                    kingPosition + 8,
+                    kingPosition + 9
+                )
+
+                var kingCanMoove = false
+                for (i in movePosition) {
+                    kingCanMoove = isKingMoveAllowed(kingPosition, i, 2, opsiteTurn)
+                    if (kingCanMoove) break
+                }
+
+                if (!kingCanMoove) showEndDialogue()
+
+            }
         }
 
         // Special handling for Rook and King castling moves
@@ -344,7 +425,7 @@ internal class ChessController(
      * @param isWhitePiece True if checking for the white king, false for black king.
      * @return True if the king is under threat (check), false otherwise.
      */
-    private fun isCheck(isWhitePiece: Boolean): Boolean {
+    private fun isCheck(isWhitePiece: Boolean): Int {
         // Find the position of the king of the current side
         val kingPosition = chessBoard.indexOfFirst {
             it != null && it.isKing() && it.color == if (isWhitePiece) pieceLightColor else pieceDarkColor
@@ -353,34 +434,40 @@ internal class ChessController(
         // If the king is not found (should not happen in a normal game), end the game
         if (kingPosition == -1) {
             showEndDialogue()
-            return false
+            return kingPosition
         }
 
+
         // Iterate over all opponent pieces to see if any can attack the king's position
+
+
+        return findAttacker(kingPosition, isWhitePiece) // No threat found
+    }
+
+    fun findAttacker(movePosition: Int, isWhitePiece: Boolean): Int {
         for (position in indices) {
             val piece = chessBoard[position]
             if (piece == null || isFriend(piece, isWhitePiece)) continue
 
             // Check if the opponent's piece can move to the king's position
             if ((piece.isPawn() && isPawnMoveAllowed(
-                    position, kingPosition, !isWhitePiece
+                    position, movePosition, !isWhitePiece
                 )) || (piece.isKnight() && isKnightMoveAllowed(
-                    position, kingPosition, !isWhitePiece
+                    position, movePosition, !isWhitePiece
                 )) || (piece.isBishop() && isBishopMoveAllowed(
-                    position, kingPosition, !isWhitePiece
+                    position, movePosition, !isWhitePiece
                 )) || (piece.isRook() && isRookMoveAllowed(
-                    position, kingPosition, !isWhitePiece
+                    position, movePosition, !isWhitePiece
                 )) || (piece.isQueen() && isQueenMoveAllowed(
-                    position, kingPosition, !isWhitePiece
+                    position, movePosition, !isWhitePiece
                 )) || (piece.isKing() && isKingMoveAllowed(
-                    position, kingPosition, 2, !isWhitePiece
+                    position, movePosition, 2, !isWhitePiece
                 ))
             ) {
-                return true // King is in check
+                return position // King is in check
             }
         }
-
-        return false // No threat found
+        return -1
     }
 
 
@@ -706,8 +793,8 @@ internal class ChessController(
     /**
      * Shows a game over dialog with the option to restart the game.
      */
-    private fun showEndDialogue() {
-        MaterialAlertDialogBuilder(context).setTitle("Game Over")
+    private fun showEndDialogue(description: String? = null) {
+        MaterialAlertDialogBuilder(context).setTitle("Game Over").setMessage(description)
             .setPositiveButton("Restart") { _, _ -> (context as Activity).recreate() }
             .setCancelable(false).show()
     }
@@ -815,14 +902,14 @@ internal class ChessController(
             if (fromRookPiece == null || !fromRookPiece.isRook()) return false
 
             // Check if the king is in check before making the move
-            if (isCheck(isFromWhitePiece)) return false
+            if (isCheck(isFromWhitePiece) != -1) return false
 
             // Move both the king and the rook
             movePiece(fromIndex, toIndex, fromPiece)
             movePiece(rookFrom, rookTo, fromRookPiece)
 
             // Check if the king would be in check after castling
-            if (isCheck(isFromWhitePiece)) {
+            if (isCheck(isFromWhitePiece) != -1) {
                 // Reverse the move if the king is in check
                 reverseMove(rookFrom, rookTo, fromRookPiece, null)
                 reverseMove(fromIndex, toIndex, fromPiece, toPiece)
