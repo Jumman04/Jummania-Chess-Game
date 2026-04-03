@@ -238,7 +238,6 @@ internal class ChessController(
             }
         }
 
-         */
 
         val movePosition = intArrayOf(
             kingPosition - 9,
@@ -261,6 +260,9 @@ internal class ChessController(
         }
 
         if (!kingCanMoove) showEndDialogue()
+
+
+         */
 
 
         // Initialize flags for Rook and King checks (for castling and rook-specific movement)
