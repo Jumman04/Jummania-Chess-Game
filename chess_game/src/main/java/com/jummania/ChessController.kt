@@ -225,11 +225,12 @@ internal class ChessController(
         if (isFriend(toPiece, isWhiteTurn)) return false  // Can't land on your own piece
 
 
-        var kingPosition = chessBoard.indexOfFirst {
+        /*
+
+                var kingPosition = chessBoard.indexOfFirst {
             it != null && it.isKing() && it.color == if (isWhiteTurn) pieceLightColor else pieceDarkColor
         }
 
-        /*
         val attackingPosition = findAttacker(kingPosition, isWhiteTurn)
         if (attackingPosition != -1) {
             if (findAttacker(attackingPosition, !isWhiteTurn) == -1) {
@@ -346,7 +347,7 @@ internal class ChessController(
 
         val opsiteTurn = !isWhiteTurn
 
-        kingPosition = chessBoard.indexOfFirst {
+        val kingPosition = chessBoard.indexOfFirst {
             it != null && it.isKing() && it.color == if (opsiteTurn) pieceLightColor else pieceDarkColor
         }
 
@@ -356,28 +357,7 @@ internal class ChessController(
             val s = findAttacker(attackingPosition, !opsiteTurn)
 
             if (s == -1) {
-                showEndDialogue()/*
-                val movePosition = intArrayOf(
-                    kingPosition - 9,
-                    kingPosition - 8,
-                    kingPosition - 7,
-                    kingPosition + 7,
-                    kingPosition + 8,
-                    kingPosition + 9
-                )
-
-                var kingCanMoove = false
-                for (i in movePosition) {
-                    kingCanMoove = isKingMoveAllowed(kingPosition, i, 2, opsiteTurn)
-                    if (kingCanMoove) {
-                        Log.d("Jjj", "kingCanMoove: $i")
-                        break
-                    }
-                }
-
-                if (!kingCanMoove)
-                 showEndDialogue()
-                 */
+                showEndDialogue()
             } else {
                 val piece = get(s)
                 if (piece?.isKing() == true) {
@@ -394,7 +374,32 @@ internal class ChessController(
             }
 
             Log.d("Jjj", "attackingPosition: $attackingPosition, s = $s")
+        } else {
+
+            val movePosition = intArrayOf(
+                kingPosition - 9,
+                kingPosition - 8,
+                kingPosition - 7,
+                kingPosition + 7,
+                kingPosition + 8,
+                kingPosition + 9
+            )
+
+            var attakerPosition: Int
+            for (i in movePosition) {
+                if (!isKingMoveAllowed(fromIndex, toIndex, 2, opsiteTurn)) continue
+                attakerPosition = findAttacker(i, opsiteTurn)
+                if (attakerPosition != -1) {
+                    val s = findAttacker(attakerPosition, !opsiteTurn)
+
+                    if (s == -1) {
+                        showEndDialogue("StealMet?")
+                    }
+                    break
+                }
+            }
         }
+
 
         // Special handling for Rook and King castling moves
         if (isRook) {
@@ -453,26 +458,27 @@ internal class ChessController(
     }
 
     fun findAttacker(movePosition: Int, isWhitePiece: Boolean): Int {
+        val opponentColor = !isWhitePiece
         for (position in indices) {
             val piece = chessBoard[position]
             if (piece == null || isFriend(piece, isWhitePiece)) continue
 
             // Check if the opponent's piece can move to the king's position
             if ((piece.isPawn() && isPawnMoveAllowed(
-                    position, movePosition, !isWhitePiece
+                    position, movePosition, opponentColor
                 )) || (piece.isKnight() && isKnightMoveAllowed(
-                    position, movePosition, !isWhitePiece
+                    position, movePosition, opponentColor
                 )) || (piece.isBishop() && isBishopMoveAllowed(
-                    position, movePosition, !isWhitePiece
+                    position, movePosition, opponentColor
                 )) || (piece.isRook() && isRookMoveAllowed(
-                    position, movePosition, !isWhitePiece
+                    position, movePosition, opponentColor
                 )) || (piece.isQueen() && isQueenMoveAllowed(
-                    position, movePosition, !isWhitePiece
+                    position, movePosition, opponentColor
                 )) || (piece.isKing() && isKingMoveAllowed(
-                    position, movePosition, 2, !isWhitePiece
+                    position, movePosition, 2, opponentColor
                 ))
             ) {
-                return position // King is in check
+                return position // attaker position
             }
         }
         return -1
